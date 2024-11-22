@@ -2,22 +2,12 @@ import torch
 import math
 from model_archs import GeneratorNN
 from torch import nn
+from utils import col_normalization, init_weights
 
 mps_device = torch.device("cpu")
 
-def init_weights(m):
-    for layer in m.children():
-        if isinstance(layer, nn.Linear):
-            nn.init.normal_(layer.weight, mean=0, std=math.sqrt(1.0 / layer.in_features))
-            layer.bias.data.fill_(0.01)
-    return m
 
-def col_normalization(x):
-    mean = torch.mean(x, dim=0, keepdim=True)
-    std = torch.std(x, dim=0, keepdim=True)
 
-    x = (x - mean) / std
-    return x
 
 def make_linear_df(rows=1000,cols=100, fve=1.0, hidden_layers=(10,), activation="tanh",
             output_size=1,scaling_constant=1.0):
@@ -29,7 +19,7 @@ def make_linear_df(rows=1000,cols=100, fve=1.0, hidden_layers=(10,), activation=
     model = model.apply(init_weights)
     x_dash = model.get_xdash(x)
     x_dash = col_normalization(x_dash)
-    print(x_dash.mean(), x_dash.var())
+    # print(x_dash.mean(), x_dash.var())
 
     beta=torch.normal(0,math.sqrt(fve/hidden_layers[-1]),size=(hidden_layers[-1], 1)).to(mps_device)
 

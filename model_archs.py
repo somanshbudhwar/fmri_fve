@@ -1,17 +1,15 @@
 import torch
 import torch.nn as nn
 import math
+from utils import col_normalization
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 LEAKY_ALPHA = 0.01
-mps_device = torch.device("cpu")
+mps_device = torch.device(os.getenv("DEVICE","cpu"))
 
-
-def col_normalization(x):
-    mean = torch.mean(x, dim=0, keepdim=True)
-    std = torch.std(x, dim=0, keepdim=True)
-
-    x = (x - mean) / std
-    return x
 
 
 class GeneratorNN(nn.Module):
@@ -25,6 +23,8 @@ class GeneratorNN(nn.Module):
             self.activation = nn.ReLU()
         elif activation == "leaky-relu":
             self.activation = nn.LeakyReLU()
+        elif activation == "sigmoid":
+            self.activation = nn.Sigmoid()
         else:
             self.activation = nn.Identity()
 
@@ -65,27 +65,31 @@ class GeneratorNN(nn.Module):
         return x
 
     def get_xdash(self, x):
-        if self.layers > 0:
-            x = self.stack1(x)
+
+        for i in range(self.layers):
+            x = getattr(self, f"stack{i+1}")(x)
             x = self.norm_and_act(x)
-        if self.layers > 1:
-            x = self.stack2(x)
-            x = self.norm_and_act(x)
-        if self.layers > 2:
-            x = self.stack3(x)
-            x = self.norm_and_act(x)
-        if self.layers > 3:
-            x = self.stack4(x)
-            x = self.norm_and_act(x)
-        if self.layers > 4:
-            x = self.stack5(x)
-            x = self.norm_and_act(x)
-        if self.layers > 5:
-            x = self.stack6(x)
-            x = self.norm_and_act(x)
-        if self.layers > 6:
-            x = self.stack7(x)
-            x = self.norm_and_act(x)
+        # if self.layers > 0:
+        #     x = self.stack1(x)
+        #     x = self.norm_and_act(x)
+        # if self.layers > 1:
+        #     x = self.stack2(x)
+        #     x = self.norm_and_act(x)
+        # if self.layers > 2:
+        #     x = self.stack3(x)
+        #     x = self.norm_and_act(x)
+        # if self.layers > 3:
+        #     x = self.stack4(x)
+        #     x = self.norm_and_act(x)
+        # if self.layers > 4:
+        #     x = self.stack5(x)
+        #     x = self.norm_and_act(x)
+        # if self.layers > 5:
+        #     x = self.stack6(x)
+        #     x = self.norm_and_act(x)
+        # if self.layers > 6:
+        #     x = self.stack7(x)
+        #     x = self.norm_and_act(x)
 
         return x
 
@@ -133,6 +137,8 @@ class FittingNN(nn.Module):
             self.activation = nn.ReLU()
         elif activation == "leaky-relu":
             self.activation = nn.LeakyReLU()
+        elif activation == "sigmoid":
+            self.activation = nn.Sigmoid()
         else:
             self.activation = nn.Identity()
 
@@ -144,32 +150,19 @@ class FittingNN(nn.Module):
         return x
 
     def get_xdash(self, x):
-        if self.layers > 0:
-            x = self.stack1(x)
-            x = self.norm_and_act(x)
-        if self.layers > 1:
-            x = self.stack2(x)
-            x = self.norm_and_act(x)
-        if self.layers > 2:
-            x = self.stack3(x)
-            x = self.norm_and_act(x)
-        if self.layers > 3:
-            x = self.stack4(x)
-            x = self.norm_and_act(x)
-        if self.layers > 4:
-            x = self.stack5(x)
-            x = self.norm_and_act(x)
-        if self.layers > 5:
-            x = self.stack6(x)
-            x = self.norm_and_act(x)
-        if self.layers > 6:
-            x = self.stack7(x)
-            x = self.norm_and_act(x)
+        layer_x_dash = []
 
-        return x
+        for i in range(self.layers):
+            x = getattr(self, f"stack{i+1}")(x)
+            x = self.norm_and_act(x)
+            layer_x_dash.append(x)
+
+        return layer_x_dash
 
     def forward(self, x):
-        x = self.get_xdash(x)
+        for i in range(self.layers):
+            x = getattr(self, f"stack{i+1}")(x)
+            x = self.norm_and_act(x)
         x = self.final(x)
         return x
 
