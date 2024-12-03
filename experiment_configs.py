@@ -1,10 +1,10 @@
-FVE = [0.2,0.4,0.6,0.8,1.0]
-COLS = [50,100,200]
-LAYERS = [1,3,5]
-HIDDEN_LAYERS_FACTORS = [1,2]
-ACTIVATIONS = ["tanh","leaky_relu"]
+FVE = [0.0,0.2,0.4,0.6,0.8,1.0]
+COLS = [100,]
+LAYERS = [3,]
+HIDDEN_LAYERS_FACTORS = [1,]
+ACTIVATIONS = ["leaky_relu"]
 OUTPUT_SIZE = 1
-SCALING_CONSTANT = [1.0,3.0]
+SCALING_CONSTANT = [3.0]
 
 # Create a list of all possible combinations of hyperparameters
 def create_experiment_configs():

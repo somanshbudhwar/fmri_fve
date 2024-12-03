@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import math
@@ -21,7 +22,7 @@ class GeneratorNN(nn.Module):
             self.activation = nn.Tanh()
         elif activation == "relu":
             self.activation = nn.ReLU()
-        elif activation == "leaky-relu":
+        elif activation == "leaky_relu":
             self.activation = nn.LeakyReLU()
         elif activation == "sigmoid":
             self.activation = nn.Sigmoid()
@@ -58,14 +59,25 @@ class GeneratorNN(nn.Module):
         )
 
     def norm_and_act(self, x):
+        # plt.hist(x.detach().cpu().numpy())
+        # plt.show()
+        # plt.close()
         x = col_normalization(x)
+        # plt.hist(x.detach().cpu().numpy())
+        # plt.show()
+        # plt.close()
         x = x * self.scaling_constant
+        # plt.hist(x.detach().cpu().numpy())
+        # plt.show()
+        # plt.close()
         x = self.activation(x)
+        # plt.hist(x.detach().cpu().numpy())
+        # plt.show()
+        # plt.close()
 
         return x
 
     def get_xdash(self, x):
-
         for i in range(self.layers):
             x = getattr(self, f"stack{i+1}")(x)
             x = self.norm_and_act(x)
@@ -135,7 +147,7 @@ class FittingNN(nn.Module):
             self.activation = nn.Tanh()
         elif activation == "relu":
             self.activation = nn.ReLU()
-        elif activation == "leaky-relu":
+        elif activation == "leaky_relu":
             self.activation = nn.LeakyReLU()
         elif activation == "sigmoid":
             self.activation = nn.Sigmoid()

@@ -8,11 +8,32 @@ from experiment_configs import ACTIVATIONS
 from utils import create_directory, get_features_and_labels, gwash_paper_fun, split_data, calculate_r2, corrected_r2
 from model_archs import FittingNN
 import json
+import concurrent.futures
+import json
+
+RESULTS_DIR = "results_temp6"
+# temp5 config
+# FVE = [0.0,0.2,0.4,0.6,0.8,1.0]
+# COLS = [100,1500]
+# LAYERS = [3,]
+# HIDDEN_LAYERS_FACTORS = [2]
+# ACTIVATIONS = ["leaky_relu"]
+# OUTPUT_SIZE = 1
+# SCALING_CONSTANT = [3.0]
+
+# temp4 config
+# FVE = [0.0,0.2,0.4,0.6,0.8,1.0]
+# COLS = [100,1500]
+# LAYERS = [1,3,5]
+# HIDDEN_LAYERS_FACTORS = [1,2]
+# ACTIVATIONS = ["leaky_relu"]
+# OUTPUT_SIZE = 1
+# SCALING_CONSTANT = [1.0,3.0]
 
 device = torch.device(os.getenv("DEVICE","cpu"))
-EPOCHS = 3
-BATCH_SIZE = 32
-ROWS = 1000
+EPOCHS = 2000
+BATCH_SIZE = 1024
+ROWS = 100000
 SAMPLES=2
 # COLS = 4000
 # LAYERS = 3
@@ -70,8 +91,9 @@ def run_experiment(config):
         HIDDEN_LAYERS = config["hidden_layers"]
         fve_val = config["fve"]
         ACTIVATION = config["activation"]
+        scaling_constant = config["scaling_constant"]
 
-        df = make_linear_df(rows=ROWS,cols=COLS, fve=fve_val, hidden_layers=HIDDEN_LAYERS, activation=ACTIVATION,scaling_constant=1.0)
+        df = make_linear_df(rows=ROWS,cols=COLS, fve=fve_val, hidden_layers=HIDDEN_LAYERS, activation=ACTIVATION,scaling_constant=scaling_constant)
 
         train, test = split_data(df)
 
@@ -102,17 +124,31 @@ def run_experiment(config):
         results.append(res)
     return results
 
-configs = create_experiment_configs()
-all_results = []
-
-create_directory("results_temp")
-for i, config in enumerate(configs):
-    print(f"Running experiment {i+1}/{len(configs)}")
+def run_experiment_parallel(config):
     results = run_experiment(config)
-    results_json = {"config": config, "results": results}
-    all_results.append(results_json)
-    # print(results_json)
-    with open("results_temp/results.json", "w") as f:
-        json.dump(all_results, f)
+    return {"config": config, "results": results}
+
+
+
+if __name__ == "__main__":
+    configs = create_experiment_configs()
+    all_results = []
+    print(f"Running {len(configs)} experiments")
+
+    create_directory(RESULTS_DIR)
+    with concurrent.futures.ProcessPoolExecutor() as executor:
+        for i, result in enumerate(executor.map(run_experiment_parallel, configs)):
+            print(f"Running experiment {i+1}/{len(configs)}")
+            all_results.append(result)
+            with open(f"{RESULTS_DIR}/results.json", "w") as f:
+                json.dump(all_results, f)
+# for i, config in enumerate(configs):
+#     print(f"Running experiment {i+1}/{len(configs)}")
+#     results = run_experiment(config)
+#     results_json = {"config": config, "results": results}
+#     all_results.append(results_json)
+#     # print(results_json)
+#     with open("results_temp2/results.json", "w") as f:
+#         json.dump(all_results, f)
 
 # Save json file
